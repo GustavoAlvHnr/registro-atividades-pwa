@@ -1,11 +1,24 @@
-import './assets/css/global.css'
+import './assets/css/global.css';
 
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
+import { registerSW } from 'virtual:pwa-register';
 
-const app = createApp(App)
+registerSW({
+  immediate: true,
+  onRegisteredSW(swUrl, registration) {
+    if (registration) {
+      setInterval(() => {
+        registration.update();
+      }, 60 * 1000);
+    }
+  },
+});
 
-app.use(router)
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import router from './router';
 
-app.mount('#app')
+const app = createApp(App);
+app.use(createPinia());
+app.use(router);
+app.mount('#app');
