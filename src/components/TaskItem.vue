@@ -59,15 +59,13 @@ defineEmits(['toggle', 'remove', 'edit'])
 <style scoped>
 .task-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 12px;
+  width: 100%;
   background-color: white;
   border-radius: 8px;
-  margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   transition: opacity 0.2s;
-  gap: 10px;
 }
 
 .task-thumbnail {
@@ -145,5 +143,26 @@ defineEmits(['toggle', 'remove', 'edit'])
   cursor: pointer;
   font-size: 0.85rem;
   padding: 4px 8px;
+}
+
+.task-item-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-container{
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.2s;
+}
+
+.location-title {
+  font-size: 1.2rem;
+  color: black;
+  margin-bottom: 4px;
 }
 </style>
