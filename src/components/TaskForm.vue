@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div class="image-section">
+    <div class="image-section section">
       <!-- Preview da imagem já salva ou capturada -->
       <img v-if="previewUrl || editingTask?.img_url" :src="previewUrl || editingTask?.img_url" class="image-preview"
         alt="Imagem da tarefa" />
@@ -24,17 +24,26 @@
       </label>
 
       <!-- Alternativa com preview ao vivo -->
-      <button type="button" class="task-button-secondary" @click="showCameraCapture = !showCameraCapture">
+      <button type="button" class="secondary-input" @click="showCameraCapture = !showCameraCapture">
         {{ showCameraCapture ? "Fechar câmera" : "Abrir preview ao vivo" }}
       </button>
 
       <CameraCapture v-if="showCameraCapture" @captured="handleCameraCapture" />
     </div>
 
-    <div class="location-section">
-      <button type="button" class="task-button-secondary" @click="handleGetLocation"
+    <div class="location-section section">
+      <button type="button" class="location-input" @click="handleGetLocation"
         :disabled="geolocationComposable.loadingLocation.value">
         {{ geolocationComposable.loadingLocation.value ? "Obtendo..." : "Capturar localização" }}
+      </button>
+
+      <button
+        v-if="editingTask && geolocationComposable.location.value"
+        type="button"
+        class="task-button-remove-location"
+        @click="handleRemoveLocation"
+      >
+        Remover localização
       </button>
 
       <span v-if="geolocationComposable.locationError.value" class="error-message">
@@ -87,16 +96,13 @@ watch(
   },
 );
 
-// 2. Usar buildLocationPayload no handleSubmit
 function handleSubmit() {
   if (!newTask.value.trim()) return;
-
   const locationPayload = buildLocationPayload(geolocationComposable.location.value);
-
   const payload = {
     title: newTask.value.trim(),
     img_attachment_key: imgAttachmentKey.value,
-    ...locationPayload, // envia latitude, longitude, accuracy, timestamp e label formatados
+    ...locationPayload,
   };
 
   if (props.editingTask) {
@@ -105,7 +111,6 @@ function handleSubmit() {
     emit('add', payload);
   }
 
-  // Limpa o formulário e a localização
   newTask.value = '';
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
   previewUrl.value = null;
@@ -145,6 +150,10 @@ async function handleGetLocation() {
     geolocationComposable.locationError.value =
       'Localização obtida, mas não foi possível identificar a rua.'
   }
+}
+
+function handleRemoveLocation() {
+  geolocationComposable.clearLocation();
 }
 
 function handleCancel() {
@@ -236,7 +245,7 @@ function handleCameraCapture(file) {
   border-color: #aaa;
 }
 
-.image-section {
+.section {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -244,6 +253,7 @@ function handleCameraCapture(file) {
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px dashed #ccc;
+
 }
 
 .image-preview {
@@ -291,5 +301,47 @@ function handleCameraCapture(file) {
   color: #999;
   margin: 0;
   flex-basis: 100%;
+}
+
+.location-input{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border: 1.5px solid #4a90d9;
+  color: #4a90d9;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.secondary-input{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: white;
+  border: 1.5px solid #4a90d9;
+  color: #4a90d9;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.task-button-remove-location {
+  padding: 8px 12px;
+  background-color: transparent;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.task-button-remove-location:hover {
+  background-color: #fdf2f2;
 }
 </style>

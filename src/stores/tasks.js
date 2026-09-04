@@ -61,21 +61,32 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
-  async function updateTask(id, { title, img_attachment_key } = {}) {
-    if (title !== undefined && !title.trim()) return;
-    error.value = null;
-    const payload = {};
-    if (title !== undefined) payload.title = title.trim();
-    if (img_attachment_key != null) payload.img_attachment_key = img_attachment_key;
-    try {
-      const response = await tasksApi.update(id, payload);
-      const index = tasks.value.findIndex((t) => t.id === id);
-      if (index !== -1) tasks.value[index] = response.data;
-    } catch (err) {
-      error.value = 'Erro ao editar tarefa.';
-      console.error(err);
-    }
+  // Na store tasks.js:
+async function updateTask(id, payload) {
+  if (payload.title !== undefined && !payload.title.trim()) return;
+  error.value = null;
+
+  const updatePayload = {};
+  if (payload.title !== undefined) updatePayload.title = payload.title.trim();
+  if (payload.img_attachment_key !== undefined && payload.img_attachment_key != null) {
+    updatePayload.img_attachment_key = payload.img_attachment_key;
   }
+
+  if (payload.latitude !== undefined) updatePayload.latitude = payload.latitude;
+  if (payload.longitude !== undefined) updatePayload.longitude = payload.longitude;
+  if (payload.geolocation_accuracy !== undefined) updatePayload.geolocation_accuracy = payload.geolocation_accuracy;
+  if (payload.geolocation_timestamp !== undefined) updatePayload.geolocation_timestamp = payload.geolocation_timestamp;
+  if (payload.location_label !== undefined) updatePayload.location_label = payload.location_label;
+
+  try {
+    const response = await tasksApi.update(id, updatePayload);
+    const index = tasks.value.findIndex((t) => t.id === id);
+    if (index !== -1) tasks.value[index] = response.data;
+  } catch (err) {
+    error.value = 'Erro ao editar tarefa.';
+    console.error(err);
+  }
+}
 
   return {
     tasks,

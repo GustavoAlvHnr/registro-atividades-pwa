@@ -46,13 +46,6 @@ export function useGeolocation() {
     if (location.value) location.value = { ...location.value, label: label || null }
   }
 
-  // Faz uma única tentativa de leitura de posição com as opções fornecidas.
-  function getPosition(options) {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, options)
-    })
-  }
-
   function requestCurrentLocation() {
     if (!isSupported) {
       locationError.value = 'Geolocalização não suportada neste dispositivo.'
@@ -62,48 +55,39 @@ export function useGeolocation() {
     loadingLocation.value = true
     locationError.value = ''
 
-    // 1ª tentativa: alta precisão (GPS), timeout curto.
-    // Se der timeout (comum em desktop sem GPS, ou GPS lento em ambientes fechados),
-    // cai para uma 2ª tentativa sem alta precisão (Wi-Fi/rede), com timeout maior.
-    // Isso evita que o usuário fique preso esperando um GPS que nunca responde.
-    return attempt({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 })
-      .catch((error) => {
-        if (error.code === error.TIMEOUT) {
-          return attempt({ enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 })
-        }
-        throw error
-      })
-      .then((position) => {
-        permissionState.value = 'granted'
-        location.value = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: position.timestamp,
-          label: null,
-        }
-        return location.value
-      })
-      .catch((error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          permissionState.value = 'denied'
-          locationError.value =
-            'Permissão de localização negada. Verifique as permissões do site e se o serviço de localização do dispositivo está ativado.'
-        } else if (error.code === error.TIMEOUT) {
-          locationError.value =
-            'Tempo esgotado para obter localização. Verifique se o GPS/serviço de localização está ativado e tente novamente ao ar livre ou perto de uma janela.'
-        } else {
-          locationError.value = 'Não foi possível obter a localização agora.'
-        }
-        return null
-      })
-      .finally(() => {
-        loadingLocation.value = false
-      })
-
-    function attempt(options) {
-      return getPosition(options)
-    }
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          permissionState.value = 'granted'
+          location.value = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+            label: null,
+          }
+          loadingLocation.value = false
+          resolve(location.value)
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            permissionState.value = 'denied'
+            locationError.value = 'Permissão de localização negada.'
+          } else if (error.code === error.TIMEOUT) {
+            locationError.value = 'Tempo esgotado para obter localização.'
+          } else {
+            locationError.value = 'Não foi possível obter a localização agora.'
+          }
+          loadingLocation.value = false
+          resolve(null)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        },
+      )
+    })
   }
 
   return {

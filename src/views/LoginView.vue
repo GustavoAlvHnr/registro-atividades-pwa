@@ -4,7 +4,7 @@
       <h1>Entrar</h1>
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">Email:</label>
         <input
           id="email"
           v-model="payload.email"
@@ -12,10 +12,11 @@
           placeholder="seu@email.com"
           required
           autocomplete="email"
+          class="text-input"
         />
       </div>
       <div class="field">
-        <label for="password">Senha</label>
+        <label for="password">Senha:</label>
         <input
           id="password"
           v-model="payload.password"
@@ -23,9 +24,10 @@
           placeholder="••••••••"
           required
           autocomplete="current-password"
+          class="text-input"
         />
       </div>
-      <button type="submit" :disabled="loading">
+      <button type="submit" :disabled="loading" class="submit-button">
         {{ loading ? 'Entrando...' : 'Entrar' }}
       </button>
     </form>
@@ -63,5 +65,37 @@ async function handleLogin() {
 }
 </script>
 <style scoped>
+.text-input{
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  width:100%;
+}
+.text-input:focus {
+  border-color: #4a90d9;
+  outline: none;
+}
+.submit-button {
+  padding: 12px 20px;
+  background-color: #4a90d9;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.field{
+  display: flex;
+  flex-direction: column;
+  margin-top: 1rem;
+}
 
+label{
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
 </style>

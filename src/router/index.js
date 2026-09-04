@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import AboutView from '../views/AboutView.vue';
 import LoginView from '../views/LoginView.vue';
+import CadastroView from '../views/CadastroView.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes = [
@@ -24,7 +25,7 @@ const routes = [
   {
     path: '/cadastro',
     name: 'cadastro',
-    component: () => import('../views/CadastroView.vue'),
+    component: CadastroView,
   },
 ];
 
@@ -36,7 +37,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const authStore = useAuthStore();
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'login' };
+    return { name: 'cadastro' };
   }
 });
 
