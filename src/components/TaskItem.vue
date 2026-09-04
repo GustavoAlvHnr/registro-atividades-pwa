@@ -11,6 +11,21 @@
       <span class="task-title">{{ task.title }}</span>
     </label>
     <div class="task-actions">
+<button
+  v-if="hasLocation"
+  type="button"
+  class="task-location-btn"
+  @click="showMap = !showMap"
+>
+  {{ showMap ? 'Ocultar Mapa' : 'Ver Local' }}
+</button>
+<div v-if="showMap && hasLocation" class="map-wrapper">
+  <p v-if="task.location_label" class="location-title">
+    {{ task.location_label }}
+  </p>
+  <TaskLocationMap :location="formattedLocation" />
+</div>
+
       <button class="task-edit" @click="$emit('edit', task)">Editar</button>
       <button class="task-remove" @click="$emit('remove', task.id)">Remover</button>
     </div>
@@ -18,12 +33,30 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed } from 'vue'
+import TaskLocationMap from './TaskLocationMap.vue'
+
+const props = defineProps({
   task: {
     type: Object,
     required: true,
   },
 })
+const showMap = ref(false)
+
+const hasLocation = computed(() => {
+  return props.task.latitude != null && props.task.longitude != null;
+});
+
+const formattedLocation = computed(() => {
+  if (!hasLocation.value) return null;
+  return {
+    latitude: Number(props.task.latitude),
+    longitude: Number(props.task.longitude),
+    accuracy: props.task.geolocation_accuracy ?? 0,
+    label: props.task.location_label || '',
+  };
+});
 
 defineEmits(['toggle', 'remove', 'edit'])
 </script>

@@ -12,44 +12,51 @@
 
     <div class="image-section">
       <!-- Preview da imagem já salva ou capturada -->
-      <img
-        v-if="previewUrl || editingTask?.img_url"
-        :src="previewUrl || editingTask?.img_url"
-        class="image-preview"
-        alt="Imagem da tarefa"
-      />
+      <img v-if="previewUrl || editingTask?.img_url" :src="previewUrl || editingTask?.img_url" class="image-preview"
+        alt="Imagem da tarefa" />
 
       <!-- Input com capture (padrão) -->
       <label class="image-label" :class="{ disabled: uploading }">
         <span v-if="uploading" class="upload-status">Enviando...</span>
         <span v-else>Adicionar imagem</span>
-        <input
-          type="file"
-          accept="image/jpeg,image/png"
-          capture="environment"
-          class="image-input"
-          :disabled="uploading"
-          @change="handleImageChange"
-        />
+        <input type="file" accept="image/jpeg,image/png" capture="environment" class="image-input" :disabled="uploading"
+          @change="handleImageChange" />
       </label>
 
       <!-- Alternativa com preview ao vivo -->
-      <button
-        type="button"
-        class="task-button-secondary"
-        @click="showCameraCapture = !showCameraCapture"
-      >
+      <button type="button" class="task-button-secondary" @click="showCameraCapture = !showCameraCapture">
         {{ showCameraCapture ? "Fechar câmera" : "Abrir preview ao vivo" }}
       </button>
 
       <CameraCapture v-if="showCameraCapture" @captured="handleCameraCapture" />
     </div>
+
+    <div class="location-section">
+      <button type="button" class="task-button-secondary" @click="handleGetLocation"
+        :disabled="geolocationComposable.loadingLocation.value">
+        {{ geolocationComposable.loadingLocation.value ? "Obtendo..." : "Capturar localização" }}
+      </button>
+
+      <span v-if="geolocationComposable.locationError.value" class="error-message">
+        {{ geolocationComposable.locationError.value }}
+      </span>
+
+      <span v-else-if="geolocationComposable.location.value?.label" class="location-label-text">
+        {{ geolocationComposable.location.value.label }}
+      </span>
+    </div>
+
   </form>
 </template>
 
 <script setup>
 import { ref, watch } from "vue";
 import tasksApi from "../api/tasksApi.js";
+import { useGeolocation } from "../composables/useGeolocation.js";
+import geocodingApi from "../api/geocodingApi.js";
+import { buildLocationPayload } from "../utils/location.js";
+
+const geolocationComposable = useGeolocation();
 
 const props = defineProps({
   editingTask: {
@@ -71,8 +78,40 @@ watch(
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
     previewUrl.value = null;
     imgAttachmentKey.value = null;
+
+    if (task) {
+      geolocationComposable.setLocationFromTask(task);
+    } else {
+      geolocationComposable.clearLocation();
+    }
   },
 );
+
+// 2. Usar buildLocationPayload no handleSubmit
+function handleSubmit() {
+  if (!newTask.value.trim()) return;
+
+  const locationPayload = buildLocationPayload(geolocationComposable.location.value);
+
+  const payload = {
+    title: newTask.value.trim(),
+    img_attachment_key: imgAttachmentKey.value,
+    ...locationPayload, // envia latitude, longitude, accuracy, timestamp e label formatados
+  };
+
+  if (props.editingTask) {
+    emit('update', props.editingTask.id, payload);
+  } else {
+    emit('add', payload);
+  }
+
+  // Limpa o formulário e a localização
+  newTask.value = '';
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+  previewUrl.value = null;
+  imgAttachmentKey.value = null;
+  geolocationComposable.clearLocation();
+}
 
 async function handleImageChange(event) {
   const file = event.target.files[0];
@@ -92,24 +131,20 @@ async function handleImageChange(event) {
   }
 }
 
-function handleSubmit() {
-  if (!newTask.value.trim()) return;
+async function handleGetLocation() {
+  const captured = await geolocationComposable.requestCurrentLocation()
+  if (!captured) return
 
-  const payload = {
-    title: newTask.value.trim(),
-    img_attachment_key: imgAttachmentKey.value,
-  };
-
-  if (props.editingTask) {
-    emit('update', props.editingTask.id, payload);
-  } else {
-    emit('add', payload);
+  try {
+    const address = await geocodingApi.reverse(
+      captured.latitude,
+      captured.longitude,
+    )
+    geolocationComposable.setLocationLabel(address?.label)
+  } catch {
+    geolocationComposable.locationError.value =
+      'Localização obtida, mas não foi possível identificar a rua.'
   }
-
-  newTask.value = '';
-  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
-  previewUrl.value = null;
-  imgAttachmentKey.value = null;
 }
 
 function handleCancel() {

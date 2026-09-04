@@ -11,8 +11,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const { requestPermission, subscribe, unsubscribe } = usePushNotifications()
 
-  async function login(email, password) {
-    const { data } = await authApi.login(email, password)
+  async function register(payload) {
+    await authApi.register(payload)
+  }
+
+  async function login(payload) {
+    const { data } = await authApi.login(payload)
     accessToken.value = data.access_token
     refreshToken.value = data.refresh_token
     localStorage.setItem('access_token', data.access_token)
@@ -38,5 +42,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('refresh_token')
   }
 
-  return { accessToken, refreshToken, isAuthenticated, login, logout, requestPermission, subscribe }
+  return { accessToken, refreshToken, isAuthenticated, login, logout, requestPermission, subscribe, register }
 })
